@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rock Paper Scissors with Sound</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      text-align: center;
+      margin: 40px 20px;
+      user-select: none;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 25px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+    }
+    .choices button {
+      font-size: 26px;
+      padding: 14px 28px;
+      margin: 10px 15px;
+      border-radius: 12px;
+      border: 2px solid #666;
+      background: white;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      outline: none;
+      position: relative;
+    }
+    .choices button:hover {
+      background-color: #e1e8f0;
+      transform: scale(1.1);
+      border-color: #3b82f6;
+      box-shadow: 0 8px 12px rgba(59,130,246,0.4);
+      z-index: 2;
+    }
+    .choices button:active {
+      transform: scale(0.95);
+      box-shadow: none;
+    }
+
+    .selection-display {
+      margin: 35px auto 15px;
+      display: flex;
+      justify-content: center;
+      gap: 120px;
+      font-size: 80px;
+      min-height: 100px;
+      color: #444;
+      user-select: none;
+    }
+    .icon {
+      opacity: 0;
+      transform: scale(0);
+      transition: transform 0.4s ease, opacity 0.4s ease;
+    }
+    .icon.show {
+      opacity: 1;
+      transform: scale(1.2);
+      animation: bounce 0.7s ease forwards;
+    }
+    @keyframes bounce {
+      0% { transform: scale(1.2) translateY(-10px);}
+      50% { transform: scale(1.4) translateY(0);}
+      100% { transform: scale(1.2) translateY(-5px);}
+    }
+
+    #countdown {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 30px;
+      color: #555;
+      height: 38px;
+    }
+
+    .result {
+      font-size: 28px;
+      font-weight: 700;
+      margin-top: 10px;
+      min-height: 40px;
+      transition: color 0.6s ease;
+      user-select: none;
+    }
+    .result.win {
+      color: #16a34a;
+      animation: pulse 1s ease infinite alternate;
+    }
+    .result.lose {
+      color: #dc2626;
+      animation: pulse 1s ease infinite alternate;
+    }
+    .result.tie {
+      color: #f59e0b;
+    }
+
+    @keyframes pulse {
+      0% { text-shadow: 0 0 5px rgba(0,0,0,0.3);}
+      100% { text-shadow: 0 0 20px rgba(0,0,0,0.7);}
+    }
+
+    #scoreboard {
+      font-size: 20px;
+      font-weight: 600;
+      margin-top: 35px;
+      color: #444;
+      letter-spacing: 0.8px;
+    }
+
+    #resetBtn {
+      margin-top: 40px;
+      background-color: #3b82f6;
+      border: none;
+      color: white;
+      font-weight: 700;
+      font-size: 18px;
+      padding: 12px 28px;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 6px 12px rgba(59,130,246,0.4);
+      transition: background-color 0.3s ease;
+      outline: none;
+    }
+    #resetBtn:hover {
+      background-color: #2563eb;
+    }
+    #resetBtn:active {
+      background-color: #1e40af;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Rock Paper Scissors</h1>
+
+  <div class="choices">
+    <button data-choice="rock">✊ Rock</button>
+    <button data-choice="paper">✋ Paper</button>
+    <button data-choice="scissors">✌️ Scissors</button>
+  </div>
+
+  <div id="countdown"></div>
+
+  <div class="selection-display">
+    <div id="userIcon" class="icon"></div>
+    <div id="compIcon" class="icon"></div>
+  </div>
+
+  <div id="result" class="result"></div>
+  <div id="scoreboard">You: 0 | Computer: 0</div>
+
+  <button id="resetBtn">Reset Scores</button>
+
+  <!-- Sound files from free sources online -->
+  <audio id="rockSound" src="https://actions.google.com/sounds/v1/impacts/wood_hit_medium.wav" preload="auto"></audio>
+  <audio id="paperSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
+  <audio id="scissorsSound" src="https://actions.google.com/sounds/v1/scissors/scissors_cutting_paper.ogg" preload="auto"></audio>
+  <audio id="winSound" src="https://actions.google.com/sounds/v1/cartoon/concussive_hit_guitar_boing.ogg" preload="auto"></audio>
+  <audio id="loseSound" src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg" preload="auto"></audio>
+  <audio id="tieSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
+
+  <script>
+    const buttons = document.querySelectorAll('.choices button');
+    const userIcon = document.getElementById('userIcon');
+    const compIcon = document.getElementById('compIcon');
+    const countdownDiv = document.getElementById('countdown');
+    const resultDiv = document.getElementById('result');
+    const scoreboard = document.getElementById('scoreboard');
+    const resetBtn = document.getElementById('resetBtn');
+
+    const rockSound = document.getElementById('rockSound');
+    const paperSound = document.getElementById('paperSound');
+    const scissorsSound = document.getElementById('scissorsSound');
+    const winSound = document.getElementById('winSound');
+    const loseSound = document.getElementById('loseSound');
+    const tieSound = document.getElementById('tieSound');
+
+    let userScore = 0;
+    let computerScore = 0;
+
+    const icons = {
+      rock: '✊',
+      paper: '✋',
+      scissors: '✌️'
+    };
+
+    const countdownSteps = ['Rock...', 'Paper...', 'Scissors...'];
+
+    function computerChoice() {
+      const choices = ['rock', 'paper', 'scissors'];
+      const randomIndex = Math.floor(Math.random() * choices.length);
+      return choices[randomIndex];
+    }
+
+    function playSound(choice) {
+      switch(choice) {
+        case 'rock':
+          rockSound.currentTime = 0;
+          rockSound.play();
+          break;
+        case 'paper':
+          paperSound.currentTime = 0;
+          paperSound.play();
+          break;
+        case 'scissors':
+          scissorsSound.currentTime = 0;
+          scissorsSound.play();
+          break;
+        case 'win':
+          winSound.currentTime = 0;
+          winSound.play();
+          break;
+        case 'lose':
+          loseSound.currentTime = 0;
+          loseSound.play();
+          break;
+        case 'tie':
+          tieSound.currentTime = 0;
+          tieSound.play();
+          break;
+      }
+    }
+
+    function showIcon(element, choice) {
+      element.textContent = icons[choice];
+      element.classList.add('show');
+    }
+
+    function hideIcon(element) {
+      element.classList.remove('show');
+      element.textContent = '';
+    }
+
+    function clearAll() {
+      hideIcon(userIcon);
+      hideIcon(compIcon);
+      resultDiv.textContent = '';
+      resultDiv.className = 'result';
+      countdownDiv.textContent = '';
+    }
+
+    async function play(userSelection) {
+      clearAll();
+      playSound(userSelection);
+
+      // Countdown animation
+      for(let i=0; i<countdownSteps.length; i++) {
+        countdownDiv.textContent = countdownSteps[i];
+        await new Promise(r => setTimeout(r, 600));
+      }
+      countdownDiv.textContent = '';
+
+      const compSelection = computerChoice();
+      showIcon(userIcon, userSelection);
+      showIcon(compIcon, compSelection);
+
+      // Decide result and play result sound
+      if (userSelection === compSelection) {
+        resultDiv.textContent = "It's a tie!";
+        resultDiv.classList.add('tie');
+        playSound('tie');
+      } else if (
+        (userSelection === 'rock' && compSelection === 'scissors') ||
+        (userSelection === 'paper' && compSelection === 'rock') ||
+        (userSelection === 'scissors' && compSelection === 'paper')
+      ) {
+        resultDiv.textContent = "You win!";
+        resultDiv.classList.add('win');
+        userScore++;
+        playSound('win');
+      } else {
+        resultDiv.textContent = "Computer wins!";
+        resultDiv.classList.add('lose');
+        computerScore++;
+        playSound('lose');
+      }
+
+      scoreboard.textContent = `You: ${userScore} | Computer: ${computerScore}`;
+    }
+
+    buttons.forEach(button => {
+      button.addEventListener('click', () => {
+        play(button.getAttribute('data-choice'));
+      });
+    });
+
+    resetBtn.addEventListener('click', () => {
+      userScore = 0;
+      computerScore = 0;
+      scoreboard.textContent = `You: ${userScore} | Computer: ${computerScore}`;
+      clearAll();
+    });
+  </script>
+
+</body>
+</html>
